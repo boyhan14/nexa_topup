@@ -1,0 +1,5 @@
+import { BadgeDollarSign, ReceiptText, Smartphone, Tv } from "lucide-react";
+export const featuredGames = [
+  { slug: "mobile-legends", name: "Mobile Legends", startingPrice: 3000, color: "from-blue-600 to-cyan-400" }, { slug: "free-fire", name: "Free Fire", startingPrice: 1000, color: "from-orange-500 to-red-500" }, { slug: "pubg-mobile", name: "PUBG Mobile", startingPrice: 4000, color: "from-amber-500 to-orange-600" }, { slug: "valorant", name: "Valorant", startingPrice: 15000, color: "from-rose-500 to-red-700" }, { slug: "genshin-impact", name: "Genshin Impact", startingPrice: 16000, color: "from-sky-500 to-violet-500" }, { slug: "roblox", name: "Roblox", startingPrice: 15000, color: "from-zinc-500 to-zinc-800" },
+];
+export const services = [{ name: "Pulsa & Data", desc: "Isi ulang semua operator dengan proses cepat.", icon: Smartphone }, { name: "Token Listrik", desc: "Token PLN prabayar langsung dikirim setelah pembayaran.", icon: BadgeDollarSign }, { name: "Tagihan PPOB", desc: "Bayar tagihan rumah tangga dari satu aplikasi.", icon: ReceiptText }, { name: "Voucher Digital", desc: "Streaming, e-wallet, dan voucher hiburan pilihan.", icon: Tv }];

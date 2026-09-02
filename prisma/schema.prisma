@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+  USER
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SUCCESS
+  FAILED
+  EXPIRED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+enum FulfillmentStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+enum WalletTransactionType {
+  DEPOSIT
+  PURCHASE
+  REFUND
+  ADJUSTMENT
+  BONUS
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  googleId     String?  @unique
+  passwordHash String?
+  name         String
+  role         Role     @default(USER)
+  isBanned     Boolean  @default(false)
+  orders       Order[]
+  wallet       Wallet?
+  auditLogs    AuditLog[] @relation("AuditActor")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model GameCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  games     Game[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Game {
+  id          String        @id @default(cuid())
+  categoryId  String
+  category    GameCategory  @relation(fields: [categoryId], references: [id])
+  name        String
+  slug        String        @unique
+  description String
+  bannerUrl   String?
+  iconUrl     String?
+  targetConfig Json     @default("{}")
+  isActive    Boolean       @default(true)
+  isFeatured  Boolean       @default(false)
+  products    GameProduct[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([isActive, isFeatured])
+}
+
+model PromotionalBanner {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  targetPath  String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  startAt     DateTime?
+  endAt       DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@index([startAt])
+  @@index([endAt])
+}
+
+model GameProduct {
+  id               String            @id @default(cuid())
+  gameId           String
+  game             Game              @relation(fields: [gameId], references: [id])
+  name             String
+  sku              String            @unique
+  providerPrice    Decimal           @db.Decimal(14, 2)
+  sellingPrice     Decimal           @db.Decimal(14, 2)
+  isActive         Boolean           @default(true)
+  providerProducts ProviderProduct[]
+  orderItems       OrderItem[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([gameId, isActive])
+}
+
+model Provider {
+  id        String            @id @default(cuid())
+  code      String            @unique
+  name      String
+  isActive  Boolean           @default(true)
+  products  ProviderProduct[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model ProviderProduct {
+  id          String      @id @default(cuid())
+  providerId  String
+  provider    Provider    @relation(fields: [providerId], references: [id])
+  productId   String
+  product     GameProduct @relation(fields: [productId], references: [id])
+  externalSku String      @unique
+  isActive    Boolean     @default(true)
+
+  @@unique([providerId, productId])
+}
+
+model Order {
+  id                String            @id @default(cuid())
+  reference         String            @unique
+  userId            String?
+  user              User?             @relation(fields: [userId], references: [id])
+  status            OrderStatus       @default(PENDING_PAYMENT)
+  paymentStatus     PaymentStatus     @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(PENDING)
+  idempotencyKey    String            @unique
+  targetData        Json
+  subtotal          Decimal           @db.Decimal(14, 2)
+  adminFee          Decimal           @db.Decimal(14, 2)
+  discount          Decimal           @default(0) @db.Decimal(14, 2)
+  total             Decimal           @db.Decimal(14, 2)
+  providerReference String?
+  failureReason     String?
+  items             OrderItem[]
+  payment           Payment?
+  logs              OrderStatusLog[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, paymentStatus])
+}
+
+model OrderItem {
+  id          String      @id @default(cuid())
+  orderId     String
+  order       Order       @relation(fields: [orderId], references: [id])
+  productId   String
+  product     GameProduct @relation(fields: [productId], references: [id])
+  productName String
+  unitPrice   Decimal     @db.Decimal(14, 2)
+  quantity    Int         @default(1)
+
+  @@index([orderId])
+}
+
+model OrderStatusLog {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id])
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+}
+
+model PaymentMethod {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  name         String
+  providerCode String
+  isActive     Boolean   @default(true)
+  payments     Payment[]
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  orderId          String        @unique
+  order            Order         @relation(fields: [orderId], references: [id])
+  paymentMethodId  String
+  paymentMethod    PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  gatewayReference String        @unique
+  status           PaymentStatus @default(PENDING)
+  amount           Decimal       @db.Decimal(14, 2)
+  paidAt           DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Wallet {
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  user         User                @relation(fields: [userId], references: [id])
+  balance      Decimal             @default(0) @db.Decimal(14, 2)
+  transactions WalletTransaction[]
+  updatedAt    DateTime            @updatedAt
+}
+
+model WalletTransaction {
+  id        String                @id @default(cuid())
+  walletId  String
+  wallet    Wallet                @relation(fields: [walletId], references: [id])
+  type      WalletTransactionType
+  amount    Decimal               @db.Decimal(14, 2)
+  reference String                @unique
+  createdAt DateTime              @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([entity, entityId, createdAt])
+  @@index([createdAt])
+}
