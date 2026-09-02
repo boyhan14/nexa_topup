@@ -126,16 +126,16 @@ export default function PurchasePanel({
 
         snap.pay(snapToken, {
           onSuccess: () => {
-            window.location.href = `/transactions/${reference}`;
+            router.push(`/transactions/${reference}`);
           },
           onPending: () => {
-            window.location.href = `/transactions/${reference}`;
+            router.push(`/transactions/${reference}`);
           },
           onError: () => {
-            window.location.href = `/transactions/${reference}`;
+            router.push(`/transactions/${reference}`);
           },
           onClose: () => {
-            window.location.href = `/transactions/${reference}`;
+            router.push(`/transactions/${reference}`);
           },
         });
         return;
@@ -147,7 +147,7 @@ export default function PurchasePanel({
 
     if (paymentUrl) {
       window.setTimeout(() => {
-        window.location.href = paymentUrl;
+        router.push(paymentUrl);
       }, 420);
       return;
     }
