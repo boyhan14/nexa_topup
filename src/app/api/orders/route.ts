@@ -6,12 +6,19 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decimal } from "@/lib/money";
 
-const schema = z.object({ productId: z.string().cuid(), paymentMethodId: z.string().cuid(), target: z.object({ userId: z.string().trim().min(1).max(100), serverId: z.string().trim().max(100).optional() }) });
+const schema = z.object({
+  productId: z.string().cuid(),
+  paymentMethodId: z.string().cuid(),
+  contact: z.string().trim().max(100).optional(),
+  target: z.object({
+    userId: z.string().trim().min(1).max(100),
+    serverId: z.string().trim().max(100).optional(),
+  }).passthrough(),
+});
 const error = (message: string, status: number) => NextResponse.json({ success: false, message }, { status });
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
-  if (!user) return error("Silakan masuk sebelum membuat transaksi.", 401);
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return error("Data checkout tidak valid.", 400);
   const key = request.headers.get("Idempotency-Key");
@@ -23,12 +30,36 @@ export async function POST(request: Request) {
   if (!product || !method) return error("Produk atau metode pembayaran tidak tersedia.", 404);
   const reference = `NXT-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
   const total = product.sellingPrice;
-  const order = await prisma.$transaction(async (tx) => tx.order.create({ data: { reference, userId: user.id, idempotencyKey: key, targetData: parsed.data.target, subtotal: total, adminFee: decimal("0"), discount: decimal("0"), total, items: { create: { productId: product.id, productName: product.name, unitPrice: total } }, logs: { create: { status: "PENDING_PAYMENT", note: "Pesanan dibuat, menunggu pembayaran." } }, payment: { create: { paymentMethodId: method.id, gatewayReference: reference, amount: total } } } }));
+  const targetData = {
+    ...parsed.data.target,
+    ...(parsed.data.contact ? { contact: parsed.data.contact } : {}),
+  };
+  const order = await prisma.$transaction(async (tx) => tx.order.create({
+    data: {
+      reference,
+      userId: user?.id ?? null,
+      idempotencyKey: key,
+      targetData,
+      subtotal: total,
+      adminFee: decimal("0"),
+      discount: decimal("0"),
+      total,
+      items: { create: { productId: product.id, productName: product.name, unitPrice: total } },
+      logs: { create: { status: "PENDING_PAYMENT", note: "Pesanan dibuat, menunggu pembayaran." } },
+      payment: { create: { paymentMethodId: method.id, gatewayReference: reference, amount: total } }
+    }
+  }));
+  const customer = user
+    ? { name: user.name, email: user.email }
+    : {
+        name: parsed.data.contact || "Pelanggan Guest",
+        email: parsed.data.contact?.includes("@") ? parsed.data.contact : "guest@nexatopup.id",
+      };
   try {
     const gateway = await createMidtransPayment({
       reference,
       amount: Number(total),
-      customer: user,
+      customer,
       itemName: `${product.game.name} - ${product.name}`,
       finishUrl: `${process.env.APP_URL}/transactions/${reference}`,
       pendingUrl: `${process.env.APP_URL}/transactions/${reference}`,

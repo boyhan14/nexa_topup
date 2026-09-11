@@ -114,6 +114,7 @@ model GameProduct {
   game             Game              @relation(fields: [gameId], references: [id])
   name             String
   sku              String            @unique
+  image            String?
   providerPrice    Decimal           @db.Decimal(14, 2)
   sellingPrice     Decimal           @db.Decimal(14, 2)
   isActive         Boolean           @default(true)

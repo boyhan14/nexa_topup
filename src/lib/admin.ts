@@ -20,6 +20,7 @@ export function hasAdminPermission(role: Role, area: AdminArea) {
 export async function requireAdminArea(area: AdminArea) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/admin");
+  if (user.role === "USER") redirect("/");
   if (!hasAdminPermission(user.role, area)) redirect("/admin");
   return user;
 }

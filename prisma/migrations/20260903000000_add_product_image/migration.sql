@@ -1,0 +1,1 @@
+ALTER TABLE "GameProduct" ADD COLUMN "image" TEXT;
