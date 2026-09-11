@@ -7,6 +7,8 @@ import { usePathname } from "next/navigation";
 import AccountMenu from "@/app/account-menu";
 import { cn } from "@/components/ui/primitives";
 
+import ThemeToggle from "@/components/ui/theme-toggle";
+
 type SiteNavProps = {
   user?: { name: string } | null;
 };
@@ -64,18 +66,18 @@ export default function SiteNav({ user }: SiteNavProps) {
       <nav
         className={cn(
           "relative mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 py-3 transition duration-300",
-          scrolled ? "border border-white/10 bg-[#071122]/82 shadow-2xl shadow-black/25 backdrop-blur-xl" : "border border-transparent bg-transparent",
+          scrolled ? "border border-white/10 bg-[#071122]/82 shadow-2xl shadow-black/25 backdrop-blur-xl site-nav-scrolled" : "border border-transparent bg-transparent",
         )}
         style={{ isolation: "isolate" }}
       >
-        <Link href="/" className="flex items-center gap-2 text-lg font-black text-white" aria-label="Nexa Topup beranda">
+        <Link href="/" className="site-nav-title flex items-center gap-2 text-lg font-black text-white" aria-label="Nexa Topup beranda">
           <span className="grid h-10 w-10 place-items-center rounded-full bg-cyan-300 text-[#03111f] shadow-lg shadow-cyan-400/20">
             <Zap size={20} fill="currentColor" />
           </span>
           NEXA <span className="text-cyan-300">TOPUP</span>
         </Link>
 
-        <div className="hidden items-center rounded-full border border-white/10 bg-white/[0.045] p-1 text-sm font-semibold text-slate-300 lg:flex">
+        <div className="site-nav-pill hidden items-center rounded-full border border-white/10 bg-white/[0.045] p-1 text-sm font-semibold text-slate-300 lg:flex">
           {navItems.map((item) => (
             <Link
               key={`${item.href}-${item.label}`}
@@ -89,10 +91,11 @@ export default function SiteNav({ user }: SiteNavProps) {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <form action="/games" className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-sm text-slate-400 xl:flex">
+          <form action="/games" className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-sm text-slate-400 xl:flex site-nav-search">
             <Search size={16} />
             <input name="q" aria-label="Cari game" placeholder="Cari game" className="w-28 bg-transparent text-sm outline-none placeholder:text-slate-500" />
           </form>
+          <ThemeToggle />
           {user ? (
             <AccountMenu name={user.name} />
           ) : (
@@ -108,17 +111,20 @@ export default function SiteNav({ user }: SiteNavProps) {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="relative z-[70] grid h-10 w-10 cursor-pointer touch-manipulation place-items-center rounded-full border border-white/10 bg-white/5 md:hidden"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-          aria-label="Buka menu"
-          aria-expanded={open}
-          aria-controls="mobile-navigation"
-        >
-          <Menu size={20} />
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="relative z-[70] grid h-10 w-10 cursor-pointer touch-manipulation place-items-center rounded-full border border-white/10 bg-white/5"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+            aria-label="Buka menu"
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+          >
+            <Menu size={20} />
+          </button>
+        </div>
       </nav>
 
       <div
@@ -133,7 +139,7 @@ export default function SiteNav({ user }: SiteNavProps) {
       <aside
         id="mobile-navigation"
         className={cn(
-          "fixed bottom-0 right-0 top-0 z-[60] w-[min(86vw,24rem)] border-l border-white/10 bg-[#071122] p-5 transition-transform duration-300 md:hidden",
+          "site-nav-drawer fixed bottom-0 right-0 top-0 z-[60] w-[min(86vw,24rem)] border-l border-white/10 bg-[#071122] p-5 transition-transform duration-300 md:hidden",
           open ? "translate-x-0" : "translate-x-full",
         )}
         style={{ pointerEvents: open ? "auto" : "none" }}
@@ -141,7 +147,7 @@ export default function SiteNav({ user }: SiteNavProps) {
         aria-modal="true"
       >
         <div className="flex items-center justify-between">
-          <span className="text-lg font-black">
+          <span className="site-nav-title text-lg font-black">
             NEXA <span className="text-cyan-300">TOPUP</span>
           </span>
           <button type="button" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border border-white/10" aria-label="Tutup menu">
@@ -149,7 +155,7 @@ export default function SiteNav({ user }: SiteNavProps) {
           </button>
         </div>
 
-        <form action="/games" className="mt-7 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-slate-400">
+        <form action="/games" className="site-nav-search mt-7 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-slate-400">
           <Search size={18} />
           <input name="q" aria-label="Cari game" placeholder="Cari game" className="min-w-0 flex-1 bg-transparent outline-none" />
         </form>
@@ -160,7 +166,7 @@ export default function SiteNav({ user }: SiteNavProps) {
               key={`${item.href}-${item.label}-mobile`}
               href={item.href}
               onClick={() => setOpen(false)}
-              className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 font-bold text-slate-200"
+              className="site-nav-drawer-link rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 font-bold text-slate-200"
             >
               {item.label}
             </Link>

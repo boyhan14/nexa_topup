@@ -3,7 +3,7 @@ import { ShieldCheck, Zap } from "lucide-react";
 
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-white/10 bg-[#050816]/85">
+    <footer className="border-t border-white/10 bg-[#050816]/85 site-footer">
       <div className="mx-auto grid max-w-7xl gap-8 px-5 py-10 md:grid-cols-[1.2fr_.8fr_.8fr] lg:px-8">
         <div>
           <Link href="/" className="inline-flex items-center gap-2 text-lg font-black">
